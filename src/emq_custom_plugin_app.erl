@@ -14,20 +14,18 @@
 %% limitations under the License.
 %%--------------------------------------------------------------------
 
--module(emq_auth_demo).
+-module(emq_custom_plugin_app).
 
--behaviour(emqttd_auth_mod).
+-behaviour(application).
 
--include_lib("emqttd/include/emqttd.hrl").
+%% Application callbacks
+-export([start/2, stop/1]).
 
--export([init/1, check/3, description/0]).
+start(_Type, _Args) ->
+  Env = application:get_all_env(emq_custom_plugin),
+  {ok, Sup} = emq_custom_plugin_sup:start_link(Env),
+  emq_custom_plugin:load(Env),
+  {ok, Sup}.
 
-init(Opts) -> {ok, Opts}.
-
-check(#mqtt_client{client_id = ClientId, username = Username}, Password, _Opts) ->
-    io:format("Auth Demo: clientId=~p, username=~p, password=~p~n",
-              [ClientId, Username, Password]),
-    ok.
-
-description() -> "Auth Demo Module".
-
+stop(_State) ->
+  emq_custom_plugin:unload().

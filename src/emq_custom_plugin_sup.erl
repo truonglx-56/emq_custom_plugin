@@ -14,21 +14,19 @@
 %% limitations under the License.
 %%--------------------------------------------------------------------
 
--module(emq_plugin_template_app).
+-module(emq_custom_plugin_sup).
+-behaviour(supervisor).
 
--behaviour(application).
+-export([start_link/1]).
 
-%% Application callbacks
--export([start/2, stop/1]).
+-export([init/1]).
 
-start(_StartType, _StartArgs) ->
-    {ok, Sup} = emq_plugin_template_sup:start_link(),
-    ok = emqttd_access_control:register_mod(auth, emq_auth_demo, []),
-    ok = emqttd_access_control:register_mod(acl, emq_acl_demo, []),
-    emq_plugin_template:load(application:get_all_env()),
-    {ok, Sup}.
+-define(M, emq_custom_plugin).
 
-stop(_State) ->
-    ok = emqttd_access_control:unregister_mod(auth, emq_auth_demo),
-    ok = emqttd_access_control:unregister_mod(acl, emq_acl_demo),
-    emq_plugin_template:unload().
+start_link(Env) ->
+  supervisor:start_link({local, ?MODULE}, ?MODULE, [Env]).
+
+init([Env]) ->
+  {ok, {{one_for_one, 10, 100}, [
+    {?M, {?M, start_link, [Env]}, permanent, 5000, worker, [?M]}]}}.
+
