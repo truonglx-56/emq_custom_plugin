@@ -4,7 +4,7 @@ DROP TABLE IF EXISTS `mqtt_message`;
 CREATE TABLE mqtt_message (
   id int(11) unsigned NOT NULL AUTO_INCREMENT,
   id_packet varchar(11) NOT NULL ,
-  pktid int(1) DEFAULT NULL COMMENT '0: deny, 1: allow',
+  pktid int(10) DEFAULT NULL,
   _from varchar(60) DEFAULT NULL COMMENT 'IpAddress',
   topic varchar(100) DEFAULT NULL COMMENT 'Username',
   qos int(1) DEFAULT NULL COMMENT '0,1,2',
@@ -16,5 +16,5 @@ CREATE TABLE mqtt_message (
   payload VARCHAR(100),
   _timestamp VARCHAR(60),
   PRIMARY KEY (id)
-) ENGINE=RockDB DEFAULT CHARSET=utf8;
+) ENGINE=RocksDB DEFAULT CHARSET=utf8;
 

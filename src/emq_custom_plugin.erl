@@ -65,30 +65,14 @@ on_message_publish(Msg = #mqtt_message{payload = <<>>}, _Env) ->
 on_message_publish(Msg = #mqtt_message{topic = <<"$SYS/", _/binary>>}, _Env) ->
   {stop, Msg};
 on_message_publish(Msg = #mqtt_message{topic = Topic, payload = Payload, timestamp = Ts}, Env) ->
-%%  case {is_table_full(Env), is_too_big(size(Payload), Env)} of
-%%    {false, false} ->
-%%      mnesia:dirty_write(#mqtt_retained{topic = Topic, msg = Msg, ts = emqttd_time:now_ms(Ts)}),
-%%      emqttd_metrics:set('messages/retained', retained_count());
-%%    {true, _} ->
-%%      lager:error("Cannot retain message(topic=~s) for table is full!", [Topic]);
-%%    {_, true}->
-%%      lager:error("Cannot retain message(topic=~s, payload_size=~p) "
-%%      "for payload is too big!", [Topic, byte_size(Payload)])
-%%  end,
-  %%TruongLX
 
+  %%TruongLX: Todo
   io:format("TruongLX ~p~n", [Topic]),
   io:format("Le Xuan Truong: ~n ~s~n", [Payload]),
   io:format("~p~n", [Msg#mqtt_message.id]),
+  io:format("~w~n", [Ts]),
+  io:format("~p", [Env]),
   {ok, Msg#mqtt_message{retain = false}}.
-
-is_table_full(Env) ->
-  Limit = proplists:get_value(max_message_num, Env, 0),
-  Limit > 0 andalso (retained_count() > Limit).
-
-is_too_big(Size, Env) ->
-  Limit = proplists:get_value(max_payload_size, Env, 0),
-  Limit > 0 andalso (Size > Limit).
 
 unload() ->
   emqttd:unhook('session.subscribed', fun ?MODULE:on_session_subscribed/4),
@@ -98,7 +82,7 @@ unload() ->
 %% API
 %%--------------------------------------------------------------------
 
-%% @doc Start the retainer
+%% @doc Start the custom plugin
 -spec(start_link(Env :: list()) -> {ok, pid()} | ignore | {error, any()}).
 start_link(Env) ->
   gen_server:start_link({local, ?MODULE}, ?MODULE, [Env], []).
@@ -108,34 +92,10 @@ start_link(Env) ->
 %%--------------------------------------------------------------------
 
 init([Env]) ->
-  Copies = case proplists:get_value(storage_type, Env, disc) of
-             disc -> disc_copies;
-             ram -> ram_copies
-           end,
-  ok = emqttd_mnesia:create_table(mqtt_retained, [
-    {type, ordered_set},
-    {Copies, [node()]},
-    {record_name, mqtt_retained},
-    {attributes, record_info(fields, mqtt_retained)},
-    {storage_properties, [{ets, [compressed]},
-      {dets, [{auto_save, 1000}]}]}]),
-  ok = emqttd_mnesia:copy_table(mqtt_retained),
-  case mnesia:table_info(mqtt_retained, storage_type) of
-    Copies -> ok;
-    _ -> mnesia:change_table_copy_type(mqtt_retained, node(), Copies)
-  end,
-  StatsFun = emqttd_stats:statsfun('retained/count', 'retained/max'),
-  {ok, StatsTimer} = timer:send_interval(timer:seconds(1), stats),
-  State = #state{stats_fun = StatsFun, stats_timer = StatsTimer},
-  {ok, start_expire_timer(proplists:get_value(expiry_interval, Env, 0), State)}.
 
-start_expire_timer(0, State) ->
-  State;
-start_expire_timer(undefined, State) ->
-  State;
-start_expire_timer(Ms, State) ->
-  {ok, Timer} = timer:send_interval(Ms, expire),
-  State#state{expiry_interval = Ms, expire_timer = Timer}.
+  {ok, Env}.
+
+
 
 handle_call(Req, _From, State) ->
   ?UNEXPECTED_REQ(Req, State).
