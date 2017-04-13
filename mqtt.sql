@@ -3,7 +3,7 @@ DROP TABLE IF EXISTS `mqtt_message`;
 
 CREATE TABLE mqtt_message (
   id int(11) unsigned NOT NULL AUTO_INCREMENT,
-  id_packet varchar(11) NOT NULL ,
+  id_packet varchar(100) NOT NULL ,
   pktid int(10) DEFAULT NULL,
   _from varchar(60) DEFAULT NULL COMMENT 'IpAddress',
   topic varchar(100) DEFAULT NULL COMMENT 'Username',

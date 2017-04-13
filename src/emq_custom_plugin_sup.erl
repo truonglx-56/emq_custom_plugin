@@ -15,18 +15,27 @@
 %%--------------------------------------------------------------------
 
 -module(emq_custom_plugin_sup).
+
+-include("emq_custom_plugin.hrl").
+
 -behaviour(supervisor).
 
 -export([start_link/1]).
 
 -export([init/1]).
 
--define(M, emq_custom_plugin).
-
 start_link(Env) ->
+  io:fwrite("TruongLX-Start-link: ~p~n", [Env]),
   supervisor:start_link({local, ?MODULE}, ?MODULE, [Env]).
 
-init([Env]) ->
-  {ok, {{one_for_one, 10, 100}, [
-    {?M, {?M, start_link, [Env]}, permanent, 5000, worker, [?M]}]}}.
+init([]) ->
+  %% MySQL Connection Pool.
+  {ok, Server} = application:get_env(emq_custom_plugin, server),
+  io:fwrite("TruongLX-Server-Custom: ~p~n", [Server]),
+  PoolSpec = ecpool:pool_spec(?APP, ?APP, emq_custom_plugin_mysql_cli, Server),
+  io:fwrite("TruongLX-PoolSpec-Custom: ~p~n", [PoolSpec]),
+
+  {ok, {{one_for_one, 10, 100}, [PoolSpec]}}.
+%%  {ok, {{one_for_one, 10, 100}, [
+%%    {?M, {?M, start_link, [Env]}, permanent, 5000, worker, [?M]}]}}.
 

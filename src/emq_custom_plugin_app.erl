@@ -17,12 +17,18 @@
 -module(emq_custom_plugin_app).
 
 -behaviour(application).
+-include("emq_custom_plugin.hrl").
+-import(emq_custom_plugin_mysql_cli, [parse_query/1]).
 
 %% Application callbacks
 -export([start/2, stop/1]).
 
 start(_Type, _Args) ->
-  Env = application:get_all_env(emq_custom_plugin),
+%%  Env = application:get_all_env(emq_custom_plugin),
+  SuperQuery = parse_query(application:get_env(emq_custom_plugin, super_query, undefined)),
+  Env = {SuperQuery},
+  io:format("Load:~p~n", [Env]),
+
   {ok, Sup} = emq_custom_plugin_sup:start_link(Env),
   emq_custom_plugin:load(Env),
   {ok, Sup}.
